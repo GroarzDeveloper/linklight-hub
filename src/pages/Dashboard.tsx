@@ -1,12 +1,21 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Plus, Search, LogOut } from 'lucide-react';
+import { Plus, Search, LogOut, Filter, Folder, Command } from 'lucide-react';
 import { LinkCard } from '@/components/dashboard/LinkCard';
 import { AddLinkDialog } from '@/components/dashboard/AddLinkDialog';
+import { CommandPalette } from '@/components/dashboard/CommandPalette';
+import { CategoryDialog } from '@/components/dashboard/CategoryDialog';
 import { ThemeToggle } from '@/components/ui/theme-toggle';
 import { useAuth } from '@/hooks/useAuth';
 import { useLinks } from '@/hooks/useLinks';
+import { useCategories } from '@/hooks/useCategories';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
+import { Badge } from '@/components/ui/badge';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -21,21 +30,38 @@ import {
 export default function Dashboard() {
   const { user, signOut } = useAuth();
   const { links, loading, addLink, updateLink, deleteLink } = useLinks(user?.id);
+  const { categories, addCategory, updateCategory, deleteCategory } = useCategories(user?.id);
   const [searchQuery, setSearchQuery] = useState('');
+  const [selectedCategoryId, setSelectedCategoryId] = useState<string>('');
   const [showAddDialog, setShowAddDialog] = useState(false);
+  const [showCategoryDialog, setShowCategoryDialog] = useState(false);
+  const [showCommandPalette, setShowCommandPalette] = useState(false);
   const [editingLink, setEditingLink] = useState<any>(null);
+  const [editingCategory, setEditingCategory] = useState<any>(null);
   const [deletingLinkId, setDeletingLinkId] = useState<string | null>(null);
 
-  const filteredLinks = links.filter(link =>
-    link.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    link.url.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    (link.description && link.description.toLowerCase().includes(searchQuery.toLowerCase()))
-  );
+  // Get links with their category info
+  const linksWithCategories = links.map(link => ({
+    ...link,
+    category: link.category_id ? categories.find(cat => cat.id === link.category_id) : null
+  }));
+
+  const filteredLinks = linksWithCategories.filter(link => {
+    const matchesSearch = 
+      link.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      link.url.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (link.description && link.description.toLowerCase().includes(searchQuery.toLowerCase()));
+    
+    const matchesCategory = selectedCategoryId === '' || link.category_id === selectedCategoryId;
+    
+    return matchesSearch && matchesCategory;
+  });
 
   const handleSaveLink = async (linkData: {
     title: string;
     url: string;
     description: string;
+    category_id?: string;
   }) => {
     if (editingLink) {
       await updateLink(editingLink.id, linkData);
@@ -64,11 +90,39 @@ export default function Dashboard() {
     }
   };
 
+  const handleSaveCategory = async (categoryData: {
+    name: string;
+    color: string;
+  }) => {
+    if (editingCategory) {
+      await updateCategory(editingCategory.id, categoryData);
+      setEditingCategory(null);
+    } else {
+      await addCategory(categoryData);
+    }
+  };
+
+  const handleEditCategory = (category: any) => {
+    setEditingCategory(category);
+    setShowCategoryDialog(true);
+  };
+
   const handleDialogClose = (open: boolean) => {
     setShowAddDialog(open);
     if (!open) {
       setEditingLink(null);
     }
+  };
+
+  const handleCategoryDialogClose = (open: boolean) => {
+    setShowCategoryDialog(open);
+    if (!open) {
+      setEditingCategory(null);
+    }
+  };
+
+  const handleOpenLink = (url: string) => {
+    window.open(url, '_blank');
   };
 
   return (
@@ -78,6 +132,18 @@ export default function Dashboard() {
           <div className="flex justify-between items-center h-16">
             <h1 className="text-xl font-semibold">LinkHub</h1>
             <div className="flex items-center gap-2">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowCommandPalette(true)}
+                className="hidden sm:flex"
+              >
+                <Command className="h-4 w-4 mr-2" />
+                Search
+                <Badge variant="secondary" className="ml-2 text-xs">
+                  ⌘K
+                </Badge>
+              </Button>
               <ThemeToggle />
               <Button
                 variant="ghost"
@@ -103,13 +169,66 @@ export default function Dashboard() {
               className="pl-10"
             />
           </div>
-          <Button
-            onClick={() => setShowAddDialog(true)}
-            className="flex items-center gap-2"
-          >
-            <Plus className="h-4 w-4" />
-            Add Link
-          </Button>
+          <div className="flex gap-2">
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="outline" className="flex items-center gap-2">
+                  <Filter className="h-4 w-4" />
+                  Filter
+                  {selectedCategoryId && (
+                    <Badge variant="secondary" className="ml-1">
+                      {categories.find(cat => cat.id === selectedCategoryId)?.name}
+                    </Badge>
+                  )}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-56">
+                <div className="space-y-2">
+                  <h4 className="font-medium">Filter by category</h4>
+                  <div className="space-y-1">
+                    <Button
+                      variant={selectedCategoryId === '' ? 'default' : 'ghost'}
+                      size="sm"
+                      className="w-full justify-start"
+                      onClick={() => setSelectedCategoryId('')}
+                    >
+                      All links
+                    </Button>
+                    {categories.map((category) => (
+                      <Button
+                        key={category.id}
+                        variant={selectedCategoryId === category.id ? 'default' : 'ghost'}
+                        size="sm"
+                        className="w-full justify-start"
+                        onClick={() => setSelectedCategoryId(category.id)}
+                      >
+                        <div 
+                          className="w-2 h-2 rounded-full mr-2"
+                          style={{ backgroundColor: category.color }}
+                        />
+                        {category.name}
+                      </Button>
+                    ))}
+                  </div>
+                </div>
+              </PopoverContent>
+            </Popover>
+            <Button
+              onClick={() => setShowCategoryDialog(true)}
+              variant="outline"
+              className="flex items-center gap-2"
+            >
+              <Folder className="h-4 w-4" />
+              Categories
+            </Button>
+            <Button
+              onClick={() => setShowAddDialog(true)}
+              className="flex items-center gap-2"
+            >
+              <Plus className="h-4 w-4" />
+              Add Link
+            </Button>
+          </div>
         </div>
 
         {loading ? (
@@ -137,6 +256,7 @@ export default function Dashboard() {
                 url={link.url}
                 description={link.description}
                 faviconUrl={link.favicon_url}
+                category={link.category}
                 onEdit={handleEditLink}
                 onDelete={handleDeleteLink}
               />
@@ -150,6 +270,26 @@ export default function Dashboard() {
         onOpenChange={handleDialogClose}
         onSave={handleSaveLink}
         editingLink={editingLink}
+        categories={categories}
+      />
+
+      <CategoryDialog
+        open={showCategoryDialog}
+        onOpenChange={handleCategoryDialogClose}
+        onSave={handleSaveCategory}
+        editingCategory={editingCategory}
+      />
+
+      <CommandPalette
+        open={showCommandPalette}
+        onOpenChange={setShowCommandPalette}
+        links={linksWithCategories}
+        categories={categories}
+        onAddLink={() => setShowAddDialog(true)}
+        onAddCategory={() => setShowCategoryDialog(true)}
+        onEditLink={handleEditLink}
+        onDeleteLink={handleDeleteLink}
+        onOpenLink={handleOpenLink}
       />
 
       <AlertDialog open={!!deletingLinkId} onOpenChange={() => setDeletingLinkId(null)}>

@@ -9,6 +9,7 @@ interface LinkCardProps {
   url: string;
   description?: string;
   faviconUrl?: string;
+  category?: { name: string; color: string } | null;
   onEdit: (id: string) => void;
   onDelete: (id: string) => void;
 }
@@ -19,6 +20,7 @@ export function LinkCard({
   url, 
   description, 
   faviconUrl,
+  category,
   onEdit, 
   onDelete 
 }: LinkCardProps) {
@@ -50,7 +52,18 @@ export function LinkCard({
           />
           
           <div className="flex-1 min-w-0">
-            <h3 className="font-medium text-foreground truncate">{title}</h3>
+            <div className="flex items-center justify-between">
+              <h3 className="font-medium text-foreground truncate">{title}</h3>
+              {category && (
+                <div className="flex items-center gap-1 ml-2 shrink-0">
+                  <div 
+                    className="w-2 h-2 rounded-full"
+                    style={{ backgroundColor: category.color }}
+                  />
+                  <span className="text-xs text-muted-foreground">{category.name}</span>
+                </div>
+              )}
+            </div>
             {description && (
               <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
                 {description}

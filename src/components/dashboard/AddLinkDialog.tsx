@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 interface AddLinkDialogProps {
   open: boolean;
@@ -18,24 +19,29 @@ interface AddLinkDialogProps {
     title: string;
     url: string;
     description: string;
+    category_id?: string;
   }) => Promise<void>;
   editingLink?: {
     id: string;
     title: string;
     url: string;
     description?: string;
+    category_id?: string;
   } | null;
+  categories: Array<{ id: string; name: string; color: string }>;
 }
 
 export function AddLinkDialog({ 
   open, 
   onOpenChange, 
   onSave, 
-  editingLink 
+  editingLink,
+  categories
 }: AddLinkDialogProps) {
   const [title, setTitle] = useState('');
   const [url, setUrl] = useState('');
   const [description, setDescription] = useState('');
+  const [categoryId, setCategoryId] = useState<string>('');
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -43,10 +49,12 @@ export function AddLinkDialog({
       setTitle(editingLink.title);
       setUrl(editingLink.url);
       setDescription(editingLink.description || '');
+      setCategoryId(editingLink.category_id || '');
     } else {
       setTitle('');
       setUrl('');
       setDescription('');
+      setCategoryId('');
     }
   }, [editingLink, open]);
 
@@ -58,7 +66,8 @@ export function AddLinkDialog({
       await onSave({
         title: title.trim(),
         url: url.trim(),
-        description: description.trim()
+        description: description.trim(),
+        category_id: categoryId || undefined
       });
       onOpenChange(false);
     } finally {
@@ -123,6 +132,29 @@ export function AddLinkDialog({
               onChange={(e) => setDescription(e.target.value)}
               rows={3}
             />
+          </div>
+          
+          <div>
+            <Label htmlFor="category">Category (optional)</Label>
+            <Select value={categoryId} onValueChange={setCategoryId}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select a category" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="">No category</SelectItem>
+                {categories.map((category) => (
+                  <SelectItem key={category.id} value={category.id}>
+                    <div className="flex items-center gap-2">
+                      <div 
+                        className="w-3 h-3 rounded-full"
+                        style={{ backgroundColor: category.color }}
+                      />
+                      {category.name}
+                    </div>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
           
           <div className="flex justify-end gap-2">

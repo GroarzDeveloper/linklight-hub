@@ -8,6 +8,7 @@ interface UserLink {
   url: string;
   description?: string;
   favicon_url?: string;
+  category_id?: string;
   created_at: string;
   updated_at: string;
 }
@@ -51,6 +52,7 @@ export function useLinks(userId?: string) {
     title: string;
     url: string;
     description: string;
+    category_id?: string;
   }) => {
     if (!userId) return;
 
@@ -71,7 +73,8 @@ export function useLinks(userId?: string) {
           title: linkData.title,
           url: linkData.url,
           description: linkData.description || null,
-          favicon_url: faviconUrl
+          favicon_url: faviconUrl,
+          category_id: linkData.category_id || null
         })
         .select()
         .single();
@@ -98,6 +101,7 @@ export function useLinks(userId?: string) {
       title: string;
       url: string;
       description: string;
+      category_id?: string;
     }
   ) => {
     if (!userId) return;
@@ -118,7 +122,8 @@ export function useLinks(userId?: string) {
           title: linkData.title,
           url: linkData.url,
           description: linkData.description || null,
-          favicon_url: faviconUrl
+          favicon_url: faviconUrl,
+          category_id: linkData.category_id || null
         })
         .eq('id', id)
         .eq('user_id', userId)
