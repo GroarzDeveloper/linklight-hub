@@ -40,6 +40,8 @@ export default function Dashboard() {
   const [editingCategory, setEditingCategory] = useState<any>(null);
   const [deletingLinkId, setDeletingLinkId] = useState<string | null>(null);
 
+  console.log('Dashboard render - showAddDialog:', showAddDialog);
+
   // Get links with their category info
   const linksWithCategories = links.map(link => ({
     ...link,
@@ -222,7 +224,10 @@ export default function Dashboard() {
               Categories
             </Button>
             <Button
-              onClick={() => setShowAddDialog(true)}
+              onClick={() => {
+                console.log('Add Link button clicked, setting showAddDialog to true');
+                setShowAddDialog(true);
+              }}
               className="flex items-center gap-2"
             >
               <Plus className="h-4 w-4" />
@@ -267,7 +272,10 @@ export default function Dashboard() {
 
       <AddLinkDialog
         open={showAddDialog}
-        onOpenChange={handleDialogClose}
+        onOpenChange={(open) => {
+          console.log('AddLinkDialog onOpenChange called with:', open);
+          handleDialogClose(open);
+        }}
         onSave={handleSaveLink}
         editingLink={editingLink}
         categories={categories}

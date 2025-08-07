@@ -44,6 +44,8 @@ export function AddLinkDialog({
   const [categoryId, setCategoryId] = useState<string>('');
   const [loading, setLoading] = useState(false);
 
+  console.log('AddLinkDialog render - open:', open, 'editingLink:', editingLink);
+
   useEffect(() => {
     if (editingLink) {
       setTitle(editingLink.title);
