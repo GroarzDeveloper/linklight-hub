@@ -4,9 +4,12 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ThemeProvider } from "@/components/ui/theme-provider";
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth } from "@/hooks/useAuth";
 import Dashboard from "./pages/Dashboard";
 import AuthPage from "./pages/Auth";
+import Index from "./pages/Index";
+import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
 
@@ -23,7 +26,16 @@ function AppContent() {
     );
   }
 
-  return user ? <Dashboard /> : <AuthPage onAuthSuccess={() => {}} />;
+  return (
+    <BrowserRouter>
+      <Routes>
+        <Route path="/" element={<Index />} />
+        <Route path="/auth" element={user ? <Navigate to="/app" replace /> : <AuthPage onAuthSuccess={() => {}} />} />
+        <Route path="/app" element={user ? <Dashboard /> : <Navigate to="/auth" replace />} />
+        <Route path="*" element={<NotFound />} />
+      </Routes>
+    </BrowserRouter>
+  );
 }
 
 const App = () => (
