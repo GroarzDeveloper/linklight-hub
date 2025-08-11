@@ -123,8 +123,19 @@ export default function Dashboard() {
     }
   };
 
+  const isSafeHttpUrl = (input: string) => {
+    try {
+      const u = new URL(input);
+      return u.protocol === 'https:' || u.protocol === 'http:';
+    } catch {
+      return false;
+    }
+  };
+
   const handleOpenLink = (url: string) => {
-    window.open(url, '_blank');
+    if (!isSafeHttpUrl(url)) return;
+    const newWindow = window.open(url, '_blank', 'noopener,noreferrer');
+    if (newWindow) newWindow.opener = null;
   };
 
   return (
